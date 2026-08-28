@@ -11,23 +11,35 @@ services:
       POSTGRES_DB: pos_db
     ports:
       - "5431:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pos_admin -d pos_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
-  # Express API Service  
+  # Express API Service
   express-api:
     build:
       context: .
     container_name: preordersystem_api
     restart: always
     ports:
-      - "3000:3009" # Expose Express on port 3000
+      - "3000:3000" # Expose Express on port 3000
       - "5555:5555" # Expose Prisma Studio on port 5555
     depends_on:
-      - postgres # Ensure PostgreSQL starts before Express API
+      postgres:
+        condition: service_healthy # Wait until Postgres accepts connections
     environment:
+      PORT: 3000
       DATABASE_URL: "postgresql://pos_admin:mysecretpassword@postgres:5432/pos_db?schema=public" # Prisma connection string
+      JWT_SECRET: "dev-only-secret-change-me"
+      JWT_EXPIRES_IN: "8h"
     volumes:
       - .:/app # Mount the project directory inside the container
       - node_modules:/app/node_modules # Named volume instead of an anonymous one
+    # The bind mount above hides whatever the image build produced (node_modules,
+    # the generated Prisma client), so redo those steps before starting the server.
+    command: sh -c "npm ci && npx prisma generate && npx prisma migrate deploy && npm start"
 
 volumes:
   node_modules:

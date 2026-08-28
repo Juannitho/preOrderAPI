@@ -7,14 +7,18 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install dependencies
+# Copy Prisma schema/config so `npm ci` can generate the client (postinstall)
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+
+# Install dependencies (also runs `prisma generate` via postinstall)
 RUN npm ci
 
 # Copy application source
 COPY src ./src
 
-# Expose ports
-EXPOSE 3009 5555
+# Expose ports (API + Prisma Studio)
+EXPOSE 3000 5555
 
 # Start the application
 CMD ["npm", "start"]
