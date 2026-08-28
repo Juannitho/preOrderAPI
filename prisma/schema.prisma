@@ -1,0 +1,174 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Restaurant {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(120)
+  timezone  String   @default("Australia/Melbourne") @db.VarChar(60)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  users      User[]
+  categories MenuCategory[]
+  bookings   Booking[]
+
+  @@map("restaurants")
+}
+
+enum UserRole {
+  MANAGER
+  STAFF
+
+  @@map("user_role")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  restaurantId String   @map("restaurant_id") @db.Uuid
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  name         String   @db.VarChar(120)
+  role         UserRole @default(MANAGER)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  bookings   Booking[]
+
+  @@index([restaurantId])
+  @@map("users")
+}
+
+model MenuCategory {
+  id           String   @id @default(uuid()) @db.Uuid
+  restaurantId String   @map("restaurant_id") @db.Uuid
+  name         String   @db.VarChar(80)
+  sortOrder    Int      @default(0) @map("sort_order")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  items      MenuItem[]
+
+  @@unique([restaurantId, name])
+  @@index([restaurantId])
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  categoryId  String   @map("category_id") @db.Uuid
+  name        String   @db.VarChar(120)
+  description String?  @db.Text
+  ingredients String?  @db.Text
+  priceCents  Int      @map("price_cents")
+  isAvailable Boolean  @default(true) @map("is_available")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  category   MenuCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([categoryId])
+  @@map("menu_items")
+}
+
+model Booking {
+  id              String   @id @default(uuid()) @db.Uuid
+  restaurantId    String   @map("restaurant_id") @db.Uuid
+  createdById     String   @map("created_by_id") @db.Uuid
+  customerName    String   @map("customer_name") @db.VarChar(120)
+  customerEmail   String?  @map("customer_email") @db.VarChar(255)
+  customerPhone   String?  @map("customer_phone") @db.VarChar(30)
+  bookingDatetime DateTime @map("booking_datetime") @db.Timestamptz(6)
+  partySize       Int      @map("party_size")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdBy  User       @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  preorder   Preorder?
+
+  @@index([restaurantId, bookingDatetime])
+  @@map("bookings")
+}
+
+enum PreorderStatus {
+  DRAFT
+  OPEN
+  PAID
+  ORDERED
+  DELIVERED
+  COMPLETED
+  CANCELLED
+
+  @@map("preorder_status")
+}
+
+model Preorder {
+  id         String         @id @default(uuid()) @db.Uuid
+  bookingId  String         @unique @map("booking_id") @db.Uuid
+  accessCode String         @unique @map("access_code") @db.VarChar(64)
+  status     PreorderStatus @default(DRAFT)
+  currency   String         @default("AUD") @db.Char(3)
+  expiresAt  DateTime?      @map("expires_at") @db.Timestamptz(6)
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  booking    Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+  payments   Payment[]
+
+  @@index([status])
+  @@map("preorders")
+}
+
+model OrderItem {
+  id             String   @id @default(uuid()) @db.Uuid
+  preorderId     String   @map("preorder_id") @db.Uuid
+  menuItemId     String   @map("menu_item_id") @db.Uuid
+  itemName       String   @map("item_name") @db.VarChar(120)
+  unitPriceCents Int      @map("unit_price_cents")
+  quantity       Int
+  notes          String?  @db.Text
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  preorder Preorder @relation(fields: [preorderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+
+  @@index([preorderId])
+  @@index([menuItemId])
+  @@map("order_items")
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+
+  @@map("payment_status")
+}
+
+model Payment {
+  id                    String        @id @default(uuid()) @db.Uuid
+  preorderId            String        @map("preorder_id") @db.Uuid
+  stripePaymentIntentId String        @unique @map("stripe_payment_intent_id") @db.VarChar(255)
+  stripeEventId         String?       @unique @map("stripe_event_id") @db.VarChar(255)
+  amountCents           Int           @map("amount_cents")
+  currency              String        @default("AUD") @db.Char(3)
+  status                PaymentStatus @default(PENDING)
+  failureReason         String?       @map("failure_reason") @db.Text
+  createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  preorder Preorder @relation(fields: [preorderId], references: [id], onDelete: Cascade)
+
+  @@index([preorderId])
+  @@map("payments")
+}

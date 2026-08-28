@@ -141,3 +141,12 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Prisma generated client (regenerated via `prisma generate`)
+/src/generated/prisma
+
+# AI assistant / editor local tooling (not part of the app)
+.claude/
+.agents/
+.windsurf/
+skills-lock.json

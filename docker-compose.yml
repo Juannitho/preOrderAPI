@@ -1,0 +1,33 @@
+name: Pre-orden System #name of the project
+services:
+  # PostgresSQL Service
+  postgres:
+    image: postgres:latest
+    container_name: preordersystem_db
+    restart: always
+    environment:
+      POSTGRES_USER: pos_admin
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: pos_db
+    ports:
+      - "5431:5432"
+
+  # Express API Service  
+  express-api:
+    build:
+      context: .
+    container_name: preordersystem_api
+    restart: always
+    ports:
+      - "3000:3009" # Expose Express on port 3000
+      - "5555:5555" # Expose Prisma Studio on port 5555
+    depends_on:
+      - postgres # Ensure PostgreSQL starts before Express API
+    environment:
+      DATABASE_URL: "postgresql://pos_admin:mysecretpassword@postgres:5432/pos_db?schema=public" # Prisma connection string
+    volumes:
+      - .:/app # Mount the project directory inside the container
+      - node_modules:/app/node_modules # Named volume instead of an anonymous one
+
+volumes:
+  node_modules:
