@@ -11,7 +11,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio --port 5560"
   },
   "keywords": [],
   "author": "",
@@ -23,8 +23,13 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.23.0",
-    "prisma": "^7.10.0"
+    "prisma": "^7.10.0",
+    "zod": "^4.4.3"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.2"
   }
 }
