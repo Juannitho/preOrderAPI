@@ -25,6 +25,7 @@ router.use((req, res, next) => {
 
 router.get('/:code', resolvePreorder, controller.getPreorder);
 router.get('/:code/menu', resolvePreorder, controller.getMenu);
+router.get('/:code/menu/translate', resolvePreorder, controller.getTranslatedMenu);
 
 router.post(
     '/:code/items',
@@ -43,5 +44,7 @@ router.patch(
 );
 
 router.delete('/:code/items/:itemId', resolvePreorder, requireOpen, controller.removeItem);
+router.post('/:code/checkout', resolvePreorder, requireOpen, controller.checkout);
+
 
 export default router;

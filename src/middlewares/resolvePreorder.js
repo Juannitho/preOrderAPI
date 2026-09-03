@@ -1,4 +1,5 @@
 import { prisma } from '../config/db.js';
+import { EDITABLE_STATUSES } from '../services/preorderState.js';
 
 export async function resolvePreorder(req, res, next) {
     try {
@@ -39,7 +40,7 @@ export async function resolvePreorder(req, res, next) {
 
 // Middleware to ensure the preorder is still open for modifications
 export function requireOpen(req, res, next) {
-    if (req.preorder.status !== 'OPEN') {
+    if (!EDITABLE_STATUSES.includes(req.preorder.status)) {
         return res.status(409).json({
             error: `This pre-order is ${req.preorder.status.toLowerCase()} and can no longer be changed`,
         });

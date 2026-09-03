@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { prisma } from '../config/db.js';
 import { NotFoundError, ConflictError } from '../utils/httpErrors.js';
+import { assertTransition, MANAGER_TRANSITIONS } from './preorderState.js';
 
 // Preorder Service
 // Constants for access code generation and default expiry
@@ -82,4 +83,31 @@ export async function getPreorderForManager(restaurantId, id) {
     );
 
     return { ...preorder, totalCents };
+}
+
+// Function to update the status of a preorder for a restaurant
+export async function updateStatus(restaurantId, id, nextStatus) {
+    if (!MANAGER_TRANSITIONS.includes(nextStatus)) {
+        throw new ConflictError(`Managers cannot set status to ${nextStatus}`);
+    }
+
+    const preorder = await prisma.preorder.findFirst({
+        where: { id, booking: { restaurantId } },
+        select: { id: true, status: true },
+    });
+
+    if (!preorder) throw new NotFoundError('Preorder');
+
+    assertTransition(preorder.status, nextStatus);
+
+    const updated = await prisma.preorder.updateMany({
+        where: { id, status: preorder.status },
+        data: { status: nextStatus },
+    });
+
+    if (updated.count === 0) {
+        throw new ConflictError('Pre-order status changed, please retry');
+    }
+
+    return prisma.preorder.findUnique({ where: { id } });
 }

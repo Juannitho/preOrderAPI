@@ -1,5 +1,7 @@
 import { prisma } from '../config/db.js';
 import { NotFoundError, ConflictError } from '../utils/httpErrors.js';
+import { translateBatch } from './deepl.service.js';
+
 
 // Helper function to calculate the total cost of order items
 function calculateTotal(orderItems) {
@@ -104,3 +106,31 @@ export async function removeItem(preorderId, itemId) {
 
     if (result.count === 0) throw new NotFoundError('Order item');
 }
+
+// Function to get the translated menu in a target language
+export async function getTranslatedMenu(restaurantId, targetLang) {
+    const menu = await getMenu(restaurantId);
+    const flatItems = menu.flatMap((category) => category.items);
+
+    if (flatItems.length === 0) return menu;
+
+    const translations = await translateBatch(
+        flatItems.map((item) => item.ingredients),
+        targetLang
+    );
+
+    const byId = new Map(
+        flatItems.map((item, i) => [item.id, translations[i]])
+    );
+
+    return menu.map((category) => ({
+        ...category,
+        items: category.items.map((item) => ({
+            ...item,
+            ingredientsTranslated: byId.get(item.id),
+            translatedTo: targetLang,
+        })),
+    }));
+}
+
+// export { SUPPORTED_LANGUAGES };

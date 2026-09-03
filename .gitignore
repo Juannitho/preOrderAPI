@@ -150,3 +150,6 @@ vite.config.ts.timestamp-*
 .agents/
 .windsurf/
 skills-lock.json
+
+# Local scratch scripts for manual API testing (may contain test API keys)
+paymentTest.js

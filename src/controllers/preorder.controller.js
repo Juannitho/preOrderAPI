@@ -48,3 +48,17 @@ export async function getOne(req, res, next) {
         return handle(err, res, next);
     }
 }
+
+// Update the status of a specific preorder for a restaurant
+export async function updateStatus(req, res, next) {
+    try {
+        const preorder = await preorderService.updateStatus(
+            req.user.restaurantId,
+            req.params.id,
+            req.body.status
+        );
+        return res.json(preorder);
+    } catch (err) {
+        return handle(err, res, next);
+    }
+}

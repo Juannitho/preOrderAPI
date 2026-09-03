@@ -10,6 +10,7 @@ import preorderRoutes from './routes/preorder.routes.js';
 import hostRoutes from './routes/host.routes.js';
 import { connectDB } from "./config/db.js";
 import { env } from './config/env.js';
+import webhookRoutes from './routes/webhook.routes.js';
 
 const app = express();
 app.use(
@@ -18,6 +19,9 @@ app.use(
     credentials: true,
   })
 );
+
+// BEFORE express.json — signature verification needs the raw body
+app.use('/webhooks', webhookRoutes);
 
 app.use(express.json());
 connectDB();

@@ -17,4 +17,8 @@ export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:5173').split(','),
   publicAppUrl: process.env.PUBLIC_APP_URL || 'http://localhost:5173',
+  deeplApiKey: process.env.DEEPL_API_KEY,
+  deeplApiUrl: process.env.DEEPL_API_URL || 'https://api-free.deepl.com/v2',
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
 };

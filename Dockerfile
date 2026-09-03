@@ -21,4 +21,4 @@ COPY src ./src
 EXPOSE 3000 5555
 
 # Start the application
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]
