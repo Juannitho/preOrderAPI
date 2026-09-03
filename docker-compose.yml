@@ -1,5 +1,25 @@
 name: Pre-orden System #name of the project
 services:
+  # RabbitMQ Service
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: preorder_rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
   # PostgresSQL Service
   postgres:
     image: postgres:latest
@@ -29,15 +49,34 @@ services:
     depends_on:
       postgres:
         condition: service_healthy # Wait until Postgres accepts connections
+      rabbitmq:
+        condition: service_healthy
     environment:
       PORT: 3000
       DATABASE_URL: "postgresql://pos_admin:mysecretpassword@postgres:5432/pos_db?schema=public" # Prisma connection string
       JWT_SECRET: "dev-only-secret-change-me"
       JWT_EXPIRES_IN: "8h"
+      RABBITMQ_URL: amqp://preordersystem:posrabbitmq@rabbitmq:5672
     volumes:
       - .:/app # Mount the project directory inside the container
       - node_modules:/app/node_modules # Named volume instead of an anonymous one
     command: sh -c "npm ci && npx prisma generate && npx prisma migrate deploy && node --watch src/server.js"
 
+  worker:
+    build: .
+    container_name: preorder_worker
+    restart: unless-stopped
+    command: node src/worker/paymentWorker.js
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://pos_admin:mysecretpassword@postgres:5432/pos_db?schema=public
+      RABBITMQ_URL: amqp://preordersystem:posrabbitmq@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
 volumes:
   node_modules:
+  rabbitmq_data:

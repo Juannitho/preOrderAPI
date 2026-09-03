@@ -21,4 +21,5 @@ export const env = {
   deeplApiUrl: process.env.DEEPL_API_URL || 'https://api-free.deepl.com/v2',
   stripeSecretKey: process.env.STRIPE_SECRET_KEY,
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+  rabbitmqUrl: process.env.RABBITMQ_URL,
 };

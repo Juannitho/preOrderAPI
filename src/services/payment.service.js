@@ -119,3 +119,44 @@ export async function recordStripeEvent(event) {
         throw err;
     }
 }
+
+export async function recordQueuedPaymentEvent(job) {
+    const succeeded = job.eventType === 'payment_intent.succeeded';
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            const payment = await tx.payment.findUnique({
+                where: { stripePaymentIntentId: job.paymentIntentId },
+            });
+
+            if (!payment) throw new NotFoundError('Payment');
+
+            await tx.payment.update({
+                where: { id: payment.id },
+                data: {
+                    stripeEventId: job.eventId,
+                    status: succeeded ? 'SUCCEEDED' : 'FAILED',
+                    failureReason: succeeded ? null : job.failureMessage ?? 'Payment failed',
+                },
+            });
+
+            if (succeeded) {
+                const preorder = await tx.preorder.findUnique({
+                    where: { id: payment.preorderId },
+                    select: { status: true },
+                });
+
+                assertTransition(preorder.status, 'PAID');
+
+                await tx.preorder.update({
+                    where: { id: payment.preorderId },
+                    data: { status: 'PAID' },
+                });
+            }
+        });
+    } catch (err) {
+        if (err.code === 'P2002') return;
+        if (err.name === 'ConflictError') return;
+        throw err;
+    }
+}

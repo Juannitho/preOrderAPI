@@ -1,135 +1,118 @@
-# preOrderAPI
+# preOrder System
 
-A small Express + Prisma API for managing restaurant pre-orders: restaurants, staff logins, menus, bookings, and the food orders tied to each booking.
+API for managing restaurant pre-orders (restaurants, staff logins, menus, bookings, and food orders).
 
-## What you need installed
+## Quick Start - Docker Compose (recommended)
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) — this is the easy path, it runs everything for you.
-- Or, if you'd rather run it without Docker: [Node.js 22+](https://nodejs.org/) and a local PostgreSQL database.
+This spins up the API, database, and RabbitMQ together with no local setup beyond Docker.
 
-## Option A: Run it with Docker (recommended)
+### 1. Start Docker Desktop
 
-This spins up the API and a Postgres database together, with no local setup beyond Docker.
+Make sure Docker is running.
 
-1. Copy the example environment file:
+### 2. Copy the environment file
 
-   ```bash
-   cp .env.example .env
-   ```
+```bash
+cp .env.example .env
+```
 
-   You don't need to fill anything in for Docker — `docker-compose.yml` already provides sensible defaults for the database, port, and JWT secret. The `.env` file is only there so the file exists (and so `prisma` commands work if you also want to run them from your own machine).
+The `docker-compose.yml` provides sensible defaults for the database, ports, and JWT secret. The `.env` file is only needed so the file exists (and so `prisma` commands work if you run them from your own machine).
 
-2. Build and start everything:
+### 3. Build and start everything
 
-   ```bash
-   docker compose up --build
-   ```
+```bash
+docker compose up --build
+```
 
-   This starts a Postgres container, then the API container, which automatically installs dependencies, generates the Prisma client, and applies any database migrations before starting the server. The first run takes a bit longer while the image builds.
+This starts:
+- **PostgreSQL** database on port `5431` (host) → `5432` (container)
+- **RabbitMQ** message broker on ports `5672` and `15672`
+- **Express API** on port `3000`
+- **Prisma Studio** on port `5555`
 
-3. Once you see `Server running in development mode on port 3000` in the logs, the API is live at [http://localhost:3000](http://localhost:3000).
+The API container will automatically install dependencies, generate the Prisma client, and apply database migrations before starting the server. The first run takes a bit longer while the image builds.
 
-4. Load some sample data (a restaurant, a manager login, a menu, and a sample booking with a pre-order) by running, in a new terminal:
+### 4. Wait for the server to be ready
 
-   ```bash
-   docker compose exec express-api npm run db:seed
-   ```
+Look for this message in the logs:
 
-   This prints a login you can use right away:
+```
+Server running in development mode on port 3000
+```
 
-   ```
-   manager login : manager@trattoria.test / Manager123!
-   ```
+Once you see it, the API is live at <http://localhost:3000>.
 
-5. Try it out:
+### 5. Load sample data (optional but recommended)
 
-   ```bash
-   curl http://localhost:3000/health
+In a **new terminal** window, run:
 
-   curl -X POST http://localhost:3000/api/auth/login \
-     -H "Content-Type: application/json" \
-     -d '{"email":"manager@trattoria.test","password":"Manager123!"}'
-   ```
+```bash
+docker compose exec express-api npm run db:seed
+```
 
-   The login response includes a JWT token — send it as `Authorization: Bearer <token>` on requests that need auth (e.g. `GET /api/auth/me`).
+This prints a login you can use right away:
 
-6. When you're done, stop everything with:
+```
+manager login : manager@trattoria.test / Manager123!
+```
 
-   ```bash
-   docker compose down
-   ```
+### 6. Test the API
 
-   Your data stays around in a Docker volume for next time. If you want a totally clean database, add `-v` to that command.
+**Health check:**
 
-## Option B: Run it locally (no Docker for the API)
+```bash
+curl http://localhost:3000/health
+```
 
-Useful if you want to run the app directly on your machine, e.g. for debugging.
+**Login to get a JWT token:**
 
-1. Install dependencies:
+```bash
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"manager@trattoria.test","password":"Manager123!"}'
+```
 
-   ```bash
-   npm install
-   ```
+The login response includes a JWT token — send it as `Authorization: Bearer <token>` on requests that need auth (e.g. `GET /api/auth/me`).
 
-   This also generates the Prisma client automatically (via the `postinstall` script).
+### 7. Stop everything when you're done
 
-2. Get a Postgres database running. The easiest way is to just start the database container from this project and skip the API container:
+```bash
+docker compose down
+```
 
-   ```bash
-   docker compose up postgres -d
-   ```
+Your data stays in Docker volumes for next time. To totally clean the database, add `-v`:
 
-   This exposes Postgres on `localhost:5431`.
+```bash
+docker compose down -v
+```
 
-3. Fill in `.env` (copy it from `.env.example` first if you haven't):
+---
 
-   ```
-   PORT=3000
-   NODE_ENV=development
-   DATABASE_URL=postgresql://pos_admin:mysecretpassword@localhost:5431/pos_db?schema=public
-   JWT_SECRET=any-random-string-for-local-dev
-   JWT_EXPIRES_IN=8h
-   ```
+## Useful Services
 
-4. Apply the database migrations:
+| Service | Port (host) | Description |
+| --- | --- | --- |
+| API | `3000` | Express API |
+| Prisma Studio | `5555` | Visual database browser |
+| PostgreSQL | `5431` | Database (host port) |
+| RabbitMQ | `5672` / `15672` | Message broker (management UI at `http://localhost:15672`) |
 
-   ```bash
-   npm run db:deploy
-   ```
+Default RabbitMQ credentials: `user: preordersystem`, `password: posrabbitmq`
 
-5. Seed some sample data:
+---
 
-   ```bash
-   npm run db:seed
-   ```
-
-6. Start the API:
-
-   ```bash
-   npm run dev
-   ```
-
-   This restarts automatically when you edit a file. Use `npm start` instead for a plain, one-off run.
-
-## Useful commands
+## Commands Reference
 
 | Command | What it does |
 | --- | --- |
-| `npm run dev` | Start the API locally with auto-restart on file changes |
-| `npm start` | Start the API locally (no auto-restart) |
-| `npm run db:migrate` | Create/apply a migration during development |
-| `npm run db:deploy` | Apply existing migrations (used in Docker/production) |
-| `npm run db:seed` | Wipe and reload the database with sample data |
-| `npm run db:studio` | Open Prisma Studio, a visual browser for your database |
-
-## API overview
-
-- `GET /health` — quick check that the server is up.
-- `POST /api/auth/login` — log in with `email` and `password`, get back a JWT.
-- `GET /api/auth/me` — returns the logged-in user (needs the `Authorization: Bearer <token>` header).
-- `GET/POST /api/orders`, `GET/PUT/DELETE /api/orders/:id` — manage orders.
+| `docker compose up --build` | Build and start all services |
+| `docker compose down` | Stop and remove services (keeps volumes) |
+| `docker compose down -v` | Stop and remove services + delete volumes |
+| `docker compose exec express-api npm run db:seed` | Load sample data |
+| `docker compose exec express-api npm run db:studio` | Open Prisma Studio |
 
 ## Notes
 
-- The Prisma schema lives in [`prisma/schema.prisma`](prisma/schema.prisma) and covers restaurants, users, menu categories/items, bookings, pre-orders, order items, and payments.
+- The Prisma schema lives in `prisma/schema.prisma`
 - Never commit your real `.env` file — it's already excluded via `.gitignore`. Only `.env.example` (with blank values) is tracked.
+- The `.env` file at the project root contains additional config (Stripe, DeepL, CORS) for full functionality.

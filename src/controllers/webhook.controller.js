@@ -1,6 +1,7 @@
 import { stripe } from '../config/stripe.js';
 import { env } from '../config/env.js';
 import { recordStripeEvent } from '../services/payment.service.js';
+import { publishPaymentEvent } from '../services/queue.service.js';
 
 const HANDLED = new Set([
     'payment_intent.succeeded',
@@ -26,9 +27,9 @@ export async function handleStripeWebhook(req, res) {
     }
 
     try {
-        await recordStripeEvent(event);
+        publishPaymentEvent(event);
     } catch (err) {
-        console.error('Webhook processing failed:', err);
+        console.error('Failed to publish payment event:', err);
         return res.sendStatus(500);
     }
 
