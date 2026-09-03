@@ -10,6 +10,16 @@ export async function listCategories(restaurantId) {
     });
 }
 
+// Function to get a single category for a specific restaurant
+export async function getCategory(restaurantId, id) {
+    const category = await prisma.menuCategory.findFirst({
+        where: { id, restaurantId },
+    });
+
+    if (!category) throw new NotFoundError('Category');
+    return category;
+}
+
 // Function to create a category for a specific restaurant
 export async function createCategory(restaurantId, data) {
     try {

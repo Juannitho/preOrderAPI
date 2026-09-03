@@ -1,5 +1,4 @@
 import * as hostService from '../services/host.service.js';
-import { handle } from '../utils/httpErrors.js';
 import { TranslationUnavailableError, TranslationQuotaError, SUPPORTED_LANGUAGES } from '../services/deepl.service.js';
 import * as paymentService from '../services/payment.service.js';
 import { PaymentGatewayError } from '../services/payment.service.js';
@@ -11,7 +10,7 @@ export async function getPreorder(req, res, next) {
         const items = await hostService.getOrderItems(req.preorder.id);
         return res.json(hostService.toHostView(req.preorder, items));
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }
 
@@ -21,7 +20,7 @@ export async function getMenu(req, res, next) {
         const menu = await hostService.getMenu(req.preorder.booking.restaurantId);
         return res.json(menu);
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }
 
@@ -32,7 +31,7 @@ export async function addItem(req, res, next) {
         const items = await hostService.getOrderItems(req.preorder.id);
         return res.status(201).json(hostService.toHostView(req.preorder, items));
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }
 
@@ -43,7 +42,7 @@ export async function updateItem(req, res, next) {
         const items = await hostService.getOrderItems(req.preorder.id);
         return res.json(hostService.toHostView(req.preorder, items));
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }
 
@@ -54,7 +53,7 @@ export async function removeItem(req, res, next) {
         const items = await hostService.getOrderItems(req.preorder.id);
         return res.json(hostService.toHostView(req.preorder, items));
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }
 
@@ -83,7 +82,7 @@ export async function getTranslatedMenu(req, res, next) {
         if (err instanceof TranslationUnavailableError) {
             return res.status(502).json({ error: err.message });
         }
-        return handle(err, res, next);
+        return next(err);
     }
 }
 
@@ -96,6 +95,6 @@ export async function checkout(req, res, next) {
         if (err instanceof PaymentGatewayError) {
             return res.status(502).json({ error: err.message });
         }
-        return handle(err, res, next);
+        return next(err);
     }
 }

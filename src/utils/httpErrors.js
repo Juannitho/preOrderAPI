@@ -1,8 +1,11 @@
-// Custom error classes for better error handling
+// Custom error classes for better error handling.
+// Each carries its own statusCode, so a plain `next(err)` from anywhere is
+// enough for the central errorHandler middleware to respond correctly.
 export class NotFoundError extends Error {
     constructor(what = 'Resource') {
         super(`${what} not found`);
         this.name = 'NotFoundError';
+        this.statusCode = 404;
     }
 }
 
@@ -11,15 +14,6 @@ export class ConflictError extends Error {
     constructor(message) {
         super(message);
         this.name = 'ConflictError';
+        this.statusCode = 409;
     }
-}
-
-export function handle(err, res, next) {
-    if (err instanceof NotFoundError) {
-        return res.status(404).json({ error: err.message });
-    }
-    if (err instanceof ConflictError) {
-        return res.status(409).json({ error: err.message });
-    }
-    return next(err);
 }

@@ -1,5 +1,4 @@
 import * as itemService from '../services/menuItem.service.js';
-import { handle } from '../utils/httpErrors.js';
 
 
 
@@ -13,7 +12,17 @@ export async function list(req, res, next) {
         });
         return res.json(items);
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
+    }
+}
+
+// Get a single menu item for a restaurant
+export async function getOne(req, res, next) {
+    try {
+        const item = await itemService.getItem(req.user.restaurantId, req.params.id);
+        return res.json(item);
+    } catch (err) {
+        return next(err);
     }
 }
 
@@ -23,7 +32,7 @@ export async function create(req, res, next) {
         const item = await itemService.createItem(req.user.restaurantId, req.body);
         return res.status(201).json(item);
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }
 
@@ -37,7 +46,7 @@ export async function update(req, res, next) {
         );
         return res.json(item);
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }
 
@@ -47,6 +56,6 @@ export async function remove(req, res, next) {
         await itemService.deleteItem(req.user.restaurantId, req.params.id);
         return res.sendStatus(204);
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }

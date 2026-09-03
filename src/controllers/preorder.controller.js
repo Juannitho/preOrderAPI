@@ -1,5 +1,4 @@
 import * as preorderService from '../services/preorder.service.js';
-import { handle } from '../utils/httpErrors.js';
 import { env } from '../config/env.js';
 
 // Helper function to add an access link to a preorder object
@@ -20,7 +19,7 @@ export async function create(req, res, next) {
         );
         return res.status(201).json(withLink(preorder));
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }
 
@@ -32,7 +31,7 @@ export async function list(req, res, next) {
         });
         return res.json(preorders);
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }
 
@@ -45,7 +44,7 @@ export async function getOne(req, res, next) {
         );
         return res.json(withLink(preorder));
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }
 
@@ -59,6 +58,6 @@ export async function updateStatus(req, res, next) {
         );
         return res.json(preorder);
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }

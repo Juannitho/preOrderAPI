@@ -1,5 +1,4 @@
 import * as categoryService from '../services/menuCategory.service.js';
-import { handle } from '../utils/httpErrors.js';
 
 // Controller functions for menu category operations
 // List all categories for a restaurant
@@ -8,7 +7,17 @@ export async function list(req, res, next) {
         const categories = await categoryService.listCategories(req.user.restaurantId);
         return res.json(categories);
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
+    }
+}
+
+// Get a single category for a restaurant
+export async function getOne(req, res, next) {
+    try {
+        const category = await categoryService.getCategory(req.user.restaurantId, req.params.id);
+        return res.json(category);
+    } catch (err) {
+        return next(err);
     }
 }
 
@@ -18,7 +27,7 @@ export async function create(req, res, next) {
         const category = await categoryService.createCategory(req.user.restaurantId, req.body);
         return res.status(201).json(category);
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }
 
@@ -32,7 +41,7 @@ export async function update(req, res, next) {
         );
         return res.json(category);
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }
 
@@ -42,6 +51,6 @@ export async function remove(req, res, next) {
         await categoryService.deleteCategory(req.user.restaurantId, req.params.id);
         return res.sendStatus(204);
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }

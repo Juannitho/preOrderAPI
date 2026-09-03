@@ -24,6 +24,17 @@ export async function listItems(restaurantId, { categoryId, availableOnly } = {}
     });
 }
 
+// Get a single menu item for a specific restaurant
+export async function getItem(restaurantId, id) {
+    const item = await prisma.menuItem.findFirst({
+        where: { id, category: { restaurantId } },
+        include: { category: { select: { id: true, name: true } } },
+    });
+
+    if (!item) throw new NotFoundError('Menu item');
+    return item;
+}
+
 // Service functions for menu item operations
 // Function to create a menu item for a specific restaurant
 export async function createItem(restaurantId, data) {

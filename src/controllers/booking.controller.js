@@ -1,5 +1,4 @@
 import * as bookingService from '../services/booking.service.js';
-import { handle } from '../utils/httpErrors.js';
 
 // Booking Controller
 // List bookings for a restaurant, optionally filtered by date range
@@ -12,7 +11,7 @@ export async function list(req, res, next) {
         });
         return res.json(bookings);
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }
 
@@ -25,7 +24,7 @@ export async function getOne(req, res, next) {
         );
         return res.json(booking);
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }
 
@@ -39,11 +38,11 @@ export async function create(req, res, next) {
         );
         return res.status(201).json(booking);
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
     }
 }
 
-// Update an existing booking for a restaurant
+// Update an existing booking for a restaurant (partial — PATCH)
 export async function update(req, res, next) {
     try {
         const booking = await bookingService.updateBooking(
@@ -53,6 +52,22 @@ export async function update(req, res, next) {
         );
         return res.json(booking);
     } catch (err) {
-        return handle(err, res, next);
+        return next(err);
+    }
+}
+
+// Replace an existing booking for a restaurant (full representation — PUT).
+// Body is validated against the full (non-partial) schema, so every field is
+// required; the underlying update is the same, just always given every field.
+export async function replace(req, res, next) {
+    try {
+        const booking = await bookingService.updateBooking(
+            req.user.restaurantId,
+            req.params.id,
+            req.body
+        );
+        return res.json(booking);
+    } catch (err) {
+        return next(err);
     }
 }
