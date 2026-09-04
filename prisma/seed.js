@@ -42,7 +42,7 @@ async function main() {
             restaurantId: restaurant.id,
             email: 'manager@trattoria.test',
             passwordHash,
-            name: 'Sofia Ricci',
+            name: 'Juan Castaneda',
             role: 'MANAGER',
         },
     });

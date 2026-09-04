@@ -23,6 +23,16 @@ export async function login(req, res, next) {
     }
 }
 
+// Manager-only: add a new staff/manager user to the caller's own restaurant.
+export async function register(req, res, next) {
+    try {
+        const user = await authService.register(req.user.restaurantId, req.body);
+        return res.status(201).json(user);
+    } catch (err) {
+        return next(err);
+    }
+}
+
 export async function me(req, res, next) {
     try {
         const user = await authService.getUserById(req.user.sub);
