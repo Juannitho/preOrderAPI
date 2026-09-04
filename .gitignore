@@ -73,6 +73,9 @@ web_modules/
 .env.*
 !.env.example
 
+# Local payment testing script (contains Stripe test credentials)
+paymentTest.js
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
