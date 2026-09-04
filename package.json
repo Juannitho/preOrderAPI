@@ -12,7 +12,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio --port 5560",
-    "test": "DATABASE_URL=postgresql://test:test@localhost:5432/test JWT_SECRET=test-jwt-secret-do-not-use-in-prod NODE_ENV=test node --experimental-strip-types --experimental-test-module-mocks --test"
+    "test": "DATABASE_URL=postgresql://test:test@localhost:5432/test JWT_SECRET=test-jwt-secret-do-not-use-in-prod NODE_ENV=test node --experimental-strip-types --experimental-test-module-mocks --test",
+    "test:jest": "node --experimental-vm-modules node_modules/.bin/jest"
   },
   "keywords": [],
   "author": "",
@@ -38,6 +39,7 @@
     "deepmerge-ts": "^8.0.2"
   },
   "devDependencies": {
+    "jest": "^30.5.1",
     "supertest": "^7.2.2"
   }
 }
