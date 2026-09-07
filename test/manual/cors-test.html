@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>preOrder API — CORS test harness (Activity 4)</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 780px; margin: 2rem auto; padding: 0 1rem; }
+  h1 { font-size: 1.25rem; }
+  fieldset { margin-bottom: 1rem; }
+  label { display: block; margin: 0.4rem 0 0.15rem; font-size: 0.85rem; }
+  input { width: 100%; padding: 0.35rem; box-sizing: border-box; }
+  button { margin: 0.5rem 0.5rem 0.5rem 0; padding: 0.5rem 0.9rem; cursor: pointer; }
+  #log { background: #111; color: #0f0; font-family: ui-monospace, monospace; font-size: 0.8rem;
+         padding: 1rem; height: 320px; overflow-y: auto; white-space: pre-wrap; border-radius: 6px; }
+  .note { background: #fffbe6; border: 1px solid #f0d000; padding: 0.6rem 1rem; border-radius: 6px; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<h1>preOrder API — CORS test harness</h1>
+<p class="note">
+  This page is a plain static file with no framework — its only job is to be served from a
+  <strong>different origin</strong> than the API, so the browser actually enforces CORS.
+  Open DevTools → Network tab before clicking the buttons: you'll see a separate
+  <code>OPTIONS</code> preflight request appear before every PUT/DELETE/JSON-POST call.
+</p>
+
+<fieldset>
+  <legend>Connection</legend>
+  <label>API base URL</label>
+  <input id="apiUrl" value="http://localhost:3000" />
+  <label>Email</label>
+  <input id="email" value="manager@trattoria.test" />
+  <label>Password</label>
+  <input id="password" type="password" value="Manager123!" />
+  <button onclick="login()">1. Log in (POST /api/auth/login)</button>
+  <label>Token (filled in automatically after login)</label>
+  <input id="token" />
+</fieldset>
+
+<fieldset>
+  <legend>Requests to test (each logs status + whether the browser accepted the response)</legend>
+  <button onclick="testGet()">GET /api/categories</button>
+  <button onclick="testPost()">POST /api/categories</button>
+  <label>Booking id for PUT (paste a real id, or leave the sample to see a 404 — CORS still applies)</label>
+  <input id="bookingId" value="00000000-0000-0000-0000-000000000000" />
+  <button onclick="testPut()">PUT /api/bookings/:id</button>
+  <label>Category id for DELETE</label>
+  <input id="categoryId" value="00000000-0000-0000-0000-000000000000" />
+  <button onclick="testDelete()">DELETE /api/categories/:id</button>
+  <button onclick="log('---- cleared ----')">Clear log</button>
+</fieldset>
+
+<div id="log"></div>
+
+<script>
+function log(msg) {
+  const el = document.getElementById('log');
+  el.textContent += msg + "\n";
+  el.scrollTop = el.scrollHeight;
+}
+
+function base() { return document.getElementById('apiUrl').value.replace(/\/$/, ''); }
+function token() { return document.getElementById('token').value; }
+
+async function login() {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  log(`\n>> POST ${base()}/api/auth/login  (origin: ${location.origin})`);
+  try {
+    const res = await fetch(base() + '/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    log(`<< status ${res.status}`);
+    if (data.token) {
+      document.getElementById('token').value = data.token;
+      log('   token saved into the Token field.');
+    } else {
+      log('   ' + JSON.stringify(data));
+    }
+  } catch (err) {
+    log('!! fetch failed: ' + err + '  (this is what a CORS rejection looks like — check the console for the real reason)');
+  }
+}
+
+async function run(label, path, options) {
+  log(`\n>> ${options.method || 'GET'} ${base()}${path}  (origin: ${location.origin})`);
+  try {
+    const res = await fetch(base() + path, options);
+    log(`<< status ${res.status} — response WAS readable by this page, so CORS allowed it.`);
+    try { log('   body: ' + (await res.text())); } catch {}
+  } catch (err) {
+    log('!! fetch failed: ' + err);
+    log('   If DevTools console shows "has been blocked by CORS policy", this origin is not in CORS_ORIGINS on the server.');
+  }
+}
+
+function authHeaders(extra) {
+  return Object.assign({ Authorization: 'Bearer ' + token() }, extra || {});
+}
+
+function testGet() {
+  run('get', '/api/categories', { headers: authHeaders() });
+}
+function testPost() {
+  run('post', '/api/categories', {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ name: 'CORS test category' }),
+  });
+}
+function testPut() {
+  const id = document.getElementById('bookingId').value;
+  run('put', `/api/bookings/${id}`, {
+    method: 'PUT',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({
+      customerName: 'CORS Tester',
+      bookingDatetime: new Date(Date.now() + 3600_000).toISOString(),
+      partySize: 2,
+    }),
+  });
+}
+function testDelete() {
+  const id = document.getElementById('categoryId').value;
+  run('delete', `/api/categories/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+}
+</script>
+</body>
+</html>
